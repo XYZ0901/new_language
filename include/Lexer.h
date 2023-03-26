@@ -20,9 +20,15 @@ public:
 
 private:
     void readChar();
+
     string readNumber();
+
     string readIdentifier();
+
     void skipWhitespace();
+
+    char peekChar();
+
 private:
     string input;
     int position{};
@@ -30,11 +36,11 @@ private:
     char ch{};
 };
 
-bool isLetter(char ch){
+bool isLetter(char ch) {
     return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_';
 }
 
-bool isDigit(char ch){
+bool isDigit(char ch) {
     return '0' <= ch && ch <= '9';
 }
 
@@ -49,43 +55,89 @@ shared_ptr<Token> Lexer::NextToken() {
 
     switch (ch) {
         case '=':
-            tok = make_shared<Token>(token::_ASSIGN,ch);
-            break;
-        case ';':
-            tok = make_shared<Token>(token::_SEMICOLON,ch);
-            break;
-        case '(':
-            tok = make_shared<Token>(token::_LPAREN,ch);
-            break;
-        case ')':
-            tok = make_shared<Token>(token::_RPAREN,ch);
-            break;
-        case ',':
-            tok = make_shared<Token>(token::_COMMA,ch);
+            if (peekChar() == '=') {
+                char _ch = ch;
+                readChar();
+                string literal({_ch, ch});
+                tok = make_shared<Token>(token::_EQ, literal);
+            } else {
+                tok = make_shared<Token>(token::_ASSIGN, ch);
+            }
             break;
         case '+':
-            tok = make_shared<Token>(token::_PLUS,ch);
+            tok = make_shared<Token>(token::_PLUS, ch);
+            break;
+        case '-':
+            tok = make_shared<Token>(token::_MINUS, ch);
+            break;
+        case '!':
+            if (peekChar() == '=') {
+                char _ch = ch;
+                readChar();
+                string literal({_ch, ch});
+                tok = make_shared<Token>(token::_NOT_EQ, literal);
+            } else {
+                tok = make_shared<Token>(token::_BANG, ch);
+            }
+            break;
+        case '/':
+            tok = make_shared<Token>(token::_SLASH, ch);
+            break;
+        case '*':
+            tok = make_shared<Token>(token::_ASTERISK, ch);
+            break;
+        case '<':
+            if (peekChar() == '=') {
+                char _ch = ch;
+                readChar();
+                string literal({_ch, ch});
+                tok = make_shared<Token>(token::_ELT, literal);
+            } else {
+                tok = make_shared<Token>(token::_LT, ch);
+            }
+            break;
+        case '>':
+            if (peekChar() == '=') {
+                char _ch = ch;
+                readChar();
+                string literal({_ch, ch});
+                tok = make_shared<Token>(token::_EGT, literal);
+            } else {
+                tok = make_shared<Token>(token::_GT, ch);
+            }
+            break;
+        case ';':
+            tok = make_shared<Token>(token::_SEMICOLON, ch);
+            break;
+        case ',':
+            tok = make_shared<Token>(token::_COMMA, ch);
+            break;
+        case '(':
+            tok = make_shared<Token>(token::_LPAREN, ch);
+            break;
+        case ')':
+            tok = make_shared<Token>(token::_RPAREN, ch);
             break;
         case '{':
-            tok = make_shared<Token>(token::_LBRACE,ch);
+            tok = make_shared<Token>(token::_LBRACE, ch);
             break;
         case '}':
-            tok = make_shared<Token>(token::_RBRACE,ch);
+            tok = make_shared<Token>(token::_RBRACE, ch);
             break;
         case 0:
-            tok = make_shared<Token>(token::_EOF,ch);
+            tok = make_shared<Token>(token::_EOF, ch);
             break;
         default:
-            if (isLetter(ch)){
+            if (isLetter(ch)) {
                 tok->Literal = readIdentifier();
                 tok->TType = LookupIdent(tok->Literal);
                 return tok;
-            }else if(isDigit(ch)){
+            } else if (isDigit(ch)) {
                 tok->TType = token_map.at(token::_INT);
                 tok->Literal = readNumber();
                 return tok;
-            }else{
-                tok = make_shared<Token>(token::_ILLEGAL,ch);
+            } else {
+                tok = make_shared<Token>(token::_ILLEGAL, ch);
             }
     }
     readChar();
@@ -104,24 +156,28 @@ void Lexer::readChar() {
 
 string Lexer::readNumber() {
     auto _position = position;
-    while(isDigit(ch)){
+    while (isDigit(ch)) {
         readChar();
     }
-    return input.substr(_position,position-_position);
+    return input.substr(_position, position - _position);
 }
 
 string Lexer::readIdentifier() {
     auto _position = position;
-    while (isLetter(ch)){
+    while (isLetter(ch)) {
         readChar();
     }
-    return input.substr(_position,position-_position);
+    return input.substr(_position, position - _position);
 }
 
 void Lexer::skipWhitespace() {
-   while (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'){
-       readChar();
-   }
+    while (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
+        readChar();
+    }
+}
+
+char Lexer::peekChar() {
+    return readPosition >= input.size() ? 0 : input.at(readPosition);
 }
 
 #endif //NEW_LANGUAGE_LEXER_H
